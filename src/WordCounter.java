@@ -64,6 +64,7 @@ public class WordCounter {
         System.out.println("Counting words time: " + String.format("%d s %d ms", TimeUnit.NANOSECONDS.toSeconds(executionTime),
                 TimeUnit.NANOSECONDS.toMillis(executionTime) - TimeUnit.SECONDS.toMillis(TimeUnit.NANOSECONDS.toSeconds(executionTime))));
 
+
         //reader.sortByOccurences(wordCountHashMap);
         //reader.sortByAlphabet(wordCountHashMap);
         */
