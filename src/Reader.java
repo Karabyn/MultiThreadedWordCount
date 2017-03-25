@@ -1,6 +1,5 @@
 import java.io.*;
-import java.util.Arrays;
-import java.util.HashMap;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -8,21 +7,42 @@ import java.util.concurrent.TimeUnit;
  */
 public class Reader {
 
-    public StringBuilder sb = new StringBuilder();
+    private static StringBuilder sb = new StringBuilder();
+    private static String[] words;
+    private static HashMap<String, Integer> wordCountHashMap = new HashMap<>();
+    private static File filename = new File("C:\\Users\\petro\\IdeaProjects\\WordCount\\src\\books1-14.txt"); // file to read from
 
     public static void main(String[] args) {
-        long startTime = System.nanoTime();
         Reader reader = new Reader();
-        reader.readFile();
-        long executionTime = System.nanoTime() - startTime;
+
+        // reading
+        long readingStartTime = System.nanoTime();
+        reader.readFile(filename);
+        long executionTime = System.nanoTime() - readingStartTime;
         System.out.println("Reading time: " + String.format("%d s %d ms", TimeUnit.NANOSECONDS.toSeconds(executionTime),
                 TimeUnit.NANOSECONDS.toMillis(executionTime) - TimeUnit.SECONDS.toMillis(TimeUnit.NANOSECONDS.toSeconds(executionTime))));
-        System.out.println("Reading time: " + String.format("%d ms", TimeUnit.NANOSECONDS.toMillis(executionTime)));
-        reader.extractOnlyWords();
+        //System.out.println("Reading time: " + String.format("%d ms", TimeUnit.NANOSECONDS.toMillis(executionTime)));
+
+        // extracting words
+        long extractingWordsStartTime = System.nanoTime();
+        reader.extractOnlyWords(sb);
+        executionTime = System.nanoTime() - extractingWordsStartTime;
+        System.out.println("Extracting words time: " + String.format("%d s %d ms", TimeUnit.NANOSECONDS.toSeconds(executionTime),
+                TimeUnit.NANOSECONDS.toMillis(executionTime) - TimeUnit.SECONDS.toMillis(TimeUnit.NANOSECONDS.toSeconds(executionTime))));
+
+        // counting words
+        long wordCountStartTime = System.nanoTime();
+        reader.wordCount(words);
+        executionTime = System.nanoTime() - wordCountStartTime;
+        System.out.println("Counting words time: " + String.format("%d s %d ms", TimeUnit.NANOSECONDS.toSeconds(executionTime),
+                TimeUnit.NANOSECONDS.toMillis(executionTime) - TimeUnit.SECONDS.toMillis(TimeUnit.NANOSECONDS.toSeconds(executionTime))));
+
+        //reader.sortByOccurences(wordCountHashMap);
+        //reader.sortByAlphabet(wordCountHashMap);
+
     }
 
-    public void readFile() {
-        File filename = new File("C:\\Users\\petro\\IdeaProjects\\WordCount\\src\\books1-14.txt");
+    private void readFile(File filename) {
         BufferedReader bufferedReader = null;
         try {
             bufferedReader = new BufferedReader(new FileReader(filename));
@@ -44,33 +64,50 @@ public class Reader {
         }
     }
 
-    public void extractOnlyWords(){
-        //String str = sb.toString().replaceAll("[!?,.’‘-”-*:)(]", " ").toLowerCase();
-        //String[] words = str.split("\\s+");
-
-        String[] words = sb.toString().replaceAll("[\\W]", " ").toLowerCase().split("\\s++");
-        //String[] words = str.split("\\s++");
+    private void extractOnlyWords(StringBuilder sb){
+        words = sb.toString().replaceAll("[\\W]", " ").toLowerCase().split("\\s++");
 
         String[] sample = Arrays.copyOfRange(words, 0, 100);
         System.out.println(Arrays.toString(sample));
-        System.out.println(words.length);
-        wordCount(words);
+        //System.out.println(words.length);
     }
 
-    public void wordCount(String[] words) {
-        HashMap<String, Integer> wordCount = new HashMap<>();
+    private void wordCount(String[] words) {
         for(String word : words) {
-            if(!wordCount.containsKey(word)){
-                wordCount.put(word, 1);
+            if(!wordCountHashMap.containsKey(word)){
+                wordCountHashMap.put(word, 1);
             }
             else {
-                wordCount.put(word, wordCount.get(word) + 1);
+                wordCountHashMap.put(word, wordCountHashMap.get(word) + 1);
             }
         }
-        System.out.println(wordCount.toString());
+        System.out.println(wordCountHashMap.toString());
+        System.out.println(numberOfDistinctWords(wordCountHashMap));
     }
 
+    private void sortByOccurences(HashMap wordCountHashMap) {
+        List list = new ArrayList(wordCountHashMap.entrySet());
+        Collections.sort(list, new Comparator<Map.Entry<String, Integer>>() {
+            @Override
+            public int compare(Map.Entry<String, Integer> a, Map.Entry<String, Integer> b) {
+                return b.getValue() - a.getValue();
+            }
+        });
+        System.out.println(list);
+    }
 
+    private void sortByAlphabet(HashMap wordCountHashMap) {
+        List list = new ArrayList(wordCountHashMap.entrySet());
+        Collections.sort(list, new Comparator<Map.Entry<String, Integer>>() {
+            @Override
+            public int compare(Map.Entry<String, Integer> a, Map.Entry<String, Integer> b) {
+                return a.getKey().compareTo(b.getKey());
+            }
+        });
+        System.out.println(list);
+    }
 
-
+    private int numberOfDistinctWords(HashMap<String, Integer> wordCount) {
+        return wordCount.size();
+    }
 }
