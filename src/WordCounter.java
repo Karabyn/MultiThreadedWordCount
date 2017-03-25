@@ -1,19 +1,19 @@
 import java.io.*;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * Created by petro on 23-Mar-17.
  */
+
 public class WordCounter {
 
     private static StringBuilder sb = new StringBuilder();
-   //private static String[] words;
+    //private static String[] words;
     private static File filename = new File("C:\\Users\\petro\\IdeaProjects\\WordCount\\src\\books1-14.txt"); // file to read from
-    private static String[] textBlocks = new String[4];
     private static HashMap<String, Integer> mainHashMap = new HashMap<>();
+    private static int numberOfThreads = 4;
+    private static String[] textBlocks = new String[numberOfThreads];
 
     public static void main(String[] args) throws InterruptedException {
         WordCounter wordCounter = new WordCounter();
@@ -28,6 +28,25 @@ public class WordCounter {
         // extracting and counting words in threads
         long wordCountStartTime = System.nanoTime();
         wordCounter.divideString();
+
+        OurThread[] ourThreads = new OurThread[numberOfThreads];
+        for(int i = 0; i < numberOfThreads; i++) {
+            ourThreads[i] = new OurThread(textBlocks[i]);
+            ourThreads[i].start();
+        }
+        for(OurThread thread : ourThreads) {
+            thread.join();
+            for (Map.Entry<String, Integer> e : thread.wordCountHashMap.entrySet())
+                mainHashMap.merge(e.getKey(), e.getValue(), Integer::sum);
+        }
+        executionTime = System.nanoTime() - wordCountStartTime;
+        System.out.println("Counting words time: " + String.format("%d s %d ms", TimeUnit.NANOSECONDS.toSeconds(executionTime),
+                TimeUnit.NANOSECONDS.toMillis(executionTime) - TimeUnit.SECONDS.toMillis(TimeUnit.NANOSECONDS.toSeconds(executionTime))));
+
+        wordCounter.sortByOccurrences(mainHashMap);
+        //wordCounter.sortByAlphabet(mainHashMap);
+
+        /*
         OurThread thread1 = new OurThread(textBlocks[0]);
         OurThread thread2 = new OurThread(textBlocks[1]);
         OurThread thread3 = new OurThread(textBlocks[2]);
@@ -39,17 +58,17 @@ public class WordCounter {
         for(OurThread thread : threads) {
             thread.join();
         }
+
+        //wordCounter.sortByAlphabet(thread1.wordCountHashMap);
+        //wordCounter.sortByAlphabet(thread2.wordCountHashMap);
+
+
         for(OurThread thread : threads) {
             for (Map.Entry<String, Integer> e : thread.wordCountHashMap.entrySet())
                 mainHashMap.merge(e.getKey(), e.getValue(), Integer::sum);
         }
-        //System.out.println("MainHashMap: " + mainHashMap.toString());
-        executionTime = System.nanoTime() - wordCountStartTime;
-        System.out.println("Counting words time: " + String.format("%d s %d ms", TimeUnit.NANOSECONDS.toSeconds(executionTime),
-                TimeUnit.NANOSECONDS.toMillis(executionTime) - TimeUnit.SECONDS.toMillis(TimeUnit.NANOSECONDS.toSeconds(executionTime))));
-
-        wordCounter.sortByOccurrences(mainHashMap);
-       /*
+        */
+        /*
         // extracting words
         long extractingWordsStartTime = System.nanoTime();
         reader.extractOnlyWords();
@@ -63,6 +82,7 @@ public class WordCounter {
         executionTime = System.nanoTime() - wordCountStartTime;
         System.out.println("Counting words time: " + String.format("%d s %d ms", TimeUnit.NANOSECONDS.toSeconds(executionTime),
                 TimeUnit.NANOSECONDS.toMillis(executionTime) - TimeUnit.SECONDS.toMillis(TimeUnit.NANOSECONDS.toSeconds(executionTime))));
+
 
         //reader.sortByOccurences(wordCountHashMap);
         //reader.sortByAlphabet(wordCountHashMap);
@@ -91,12 +111,21 @@ public class WordCounter {
         }
     }
 
+    /**
+     * Divides the input text into equal parts according
+     * to the number of threads for further processing.
+     */
     private void divideString() {
         String text = sb.toString();
-        textBlocks[0] = text.substring(0, (int)(text.length() * 0.25));
-        textBlocks[1] = text.substring((int)(text.length() * 0.25), (int)(text.length() * 0.5));
-        textBlocks[2] = text.substring((int)(text.length() * 0.5), (int)(text.length() * 0.75));
-        textBlocks[3] = text.substring((int)(text.length() * 0.75), text.length());
+        int textLength = text.length();
+        double n = numberOfThreads;
+        for(int i = 0; i < numberOfThreads; i ++) {
+            textBlocks[i] = text.substring((int)(textLength * (i / n)), (int)(textLength * ((i + 1) / n)));
+            //System.out.println(i + "; " + (int)(textLength * (i / n))  + "; " + (int)(textLength * ((i + 1) / n)));
+            //System.out.println(textBlocks[i]);
+            //System.out.println(text.substring(0, 2));
+        }
+
     }
 
     private void sortByOccurrences(HashMap wordCountHashMap) {
@@ -126,17 +155,19 @@ public class WordCounter {
         }
 
 }
-
     class OurThread extends Thread {
+
         private String text;
         public HashMap<String,Integer> wordCountHashMap = new HashMap<>();
-        public OurThread(String text)
-        {
+
+        public OurThread(String text) {
             this.text=text;
         }
-        private String[] extractOnlyWords(){
+
+        private String[] extractOnlyWords() {
             return text.replaceAll("[\\W]", " ").toLowerCase().split("\\s++");
         }
+
         private void wordCount(String[] words) {
             for(String word : words) {
                 if(!wordCountHashMap.containsKey(word)){
@@ -147,6 +178,7 @@ public class WordCounter {
                 }
             }
         }
+
         @Override
         public void run() {
             String[] block = extractOnlyWords();
