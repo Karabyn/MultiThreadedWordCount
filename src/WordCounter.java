@@ -46,6 +46,7 @@ public class WordCounter {
         wordCounter.sortByOccurrences(mainHashMap);
         //wordCounter.sortByAlphabet(mainHashMap);
 
+
         /*
         OurThread thread1 = new OurThread(textBlocks[0]);
         OurThread thread2 = new OurThread(textBlocks[1]);
